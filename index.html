@@ -8,7 +8,7 @@
 <style>
 body{
     margin:0;
-    font-family: 'Segoe UI', sans-serif;
+    font-family:'Segoe UI', sans-serif;
     background: linear-gradient(135deg,#0f2027,#203a43,#2c5364);
     color:#f5f5f5;
     text-align:center;
@@ -35,18 +35,25 @@ button{
     box-shadow:0 4px 10px rgba(0,0,0,0.3);
 }
 
+input, select{
+    padding:5px;
+    border-radius:6px;
+    border:none;
+    margin:5px;
+}
+
 #game-board{
     display:grid;
     gap:18px;
     justify-content:center;
     margin:25px auto;
-    max-width:700px;
+    max-width:750px;
 }
 
 /* الكرت */
 .card{
-    width:140px;
-    height:190px;
+    width:150px;
+    height:210px;
     perspective:1000px;
 }
 
@@ -66,9 +73,9 @@ button{
     position:absolute;
     width:100%;
     height:100%;
-    border-radius:16px;
+    border-radius:18px;
     backface-visibility:hidden;
-    box-shadow:0 8px 20px rgba(0,0,0,0.4);
+    box-shadow:0 8px 20px rgba(0,0,0,0.45);
 }
 
 /* الوجه الأمامي */
@@ -87,12 +94,12 @@ button{
     content:"👑";
     font-size:22px;
     position:absolute;
-    top:10px;
+    top:12px;
 }
 
 /* اسم Ola */
 .card-front span{
-    font-size:30px;
+    font-size:32px;
     font-weight:bold;
     color:#1c2b36;
     letter-spacing:1px;
@@ -106,20 +113,22 @@ button{
     display:flex;
     align-items:center;
     justify-content:center;
+    position:relative;
 }
 
-/* قلب خلفي زخرفي */
+/* قلب زخرفي */
 .card-back::before{
     content:"♥";
-    font-size:60px;
-    color:rgba(255,255,255,0.08);
+    font-size:70px;
+    color:rgba(255,255,255,0.06);
     position:absolute;
 }
 
+/* الصورة */
 .card-back img{
     width:85%;
     height:85%;
-    object-fit:cover;
+    object-fit:contain;
     border-radius:12px;
     z-index:2;
 }
@@ -163,6 +172,7 @@ let matchedPairs=0;
 let totalPairs=8;
 
 const images=[
+"https://e.top4top.io/p_3697mlg9s2.png",
 "https://picsum.photos/300?1",
 "https://picsum.photos/300?2",
 "https://picsum.photos/300?3",
@@ -177,8 +187,7 @@ const images=[
 "https://picsum.photos/300?12",
 "https://picsum.photos/300?13",
 "https://picsum.photos/300?14",
-"https://picsum.photos/300?15",
-"https://picsum.photos/300?16"
+"https://picsum.photos/300?15"
 ];
 
 function startGame(){
