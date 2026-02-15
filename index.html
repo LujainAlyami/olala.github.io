@@ -3,267 +3,138 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>جمرة غضى - إصدار رمضان 🌙</title>
+<title>لعبة الذاكرة الجماعية</title>
 
 <style>
-
 body{
-    margin:0;
-    font-family: 'Arial', sans-serif;
-    background: radial-gradient(circle at top,#0b1d3a,#071224 70%);
-    color:white;
-    text-align:center;
-    overflow-x:hidden;
+margin:0;
+font-family:Arial;
+background:linear-gradient(135deg,#1e3c72,#2a5298);
+color:white;
+text-align:center;
 }
 
-/* نجوم خفيفة */
-body::after{
-    content:"";
-    position:fixed;
-    width:100%;
-    height:100%;
-    background-image:
-    radial-gradient(white 1px, transparent 1px);
-    background-size:3px 3px;
-    opacity:0.08;
-    pointer-events:none;
-}
-
-/* العنوان */
 h1{
-    margin-top:20px;
-    font-size:28px;
-    color:#ffd700;
-    text-shadow:0 0 10px #d4af37;
+margin-top:20px;
 }
 
-/* لوحة التحكم */
-.controls{
-    margin:15px;
+#game-board{
+display:grid;
+grid-template-columns:repeat(4,1fr);
+gap:12px;
+justify-content:center;
+margin:20px;
 }
 
-input, select{
-    padding:8px;
-    border-radius:8px;
-    border:none;
-    margin:5px;
-}
-
-button{
-    padding:10px 20px;
-    border:none;
-    border-radius:10px;
-    background:linear-gradient(45deg,#d4af37,#f9e076);
-    font-weight:bold;
-    cursor:pointer;
-    margin:10px;
-}
-
-/* الشبكة */
-.game-board{
-    display:grid;
-    gap:12px;
-    padding:15px;
-    max-width:700px;
-    margin:auto;
-}
-
-/* الكرت */
 .card{
-    position:relative;
-    width:100%;
-    aspect-ratio:1/1;
-    perspective:1000px;
-    cursor:pointer;
+width:100px;
+height:120px;
+perspective:1000px;
+cursor:pointer;
 }
 
 .card-inner{
-    position:absolute;
-    width:100%;
-    height:100%;
-    transition:transform 0.6s;
-    transform-style:preserve-3d;
+width:100%;
+height:100%;
+position:relative;
+transform-style:preserve-3d;
+transition:0.6s;
 }
 
 .card.flipped .card-inner{
-    transform:rotateY(180deg);
+transform:rotateY(180deg);
 }
 
-.card-front, .card-back{
-    position:absolute;
-    width:100%;
-    height:100%;
-    backface-visibility:hidden;
-    border-radius:15px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:24px;
-    font-weight:bold;
+.card-front,.card-back{
+position:absolute;
+width:100%;
+height:100%;
+backface-visibility:hidden;
+border-radius:10px;
 }
 
 .card-front{
-    background:linear-gradient(145deg,#102a43,#0b3d2e);
-    color:#ffd700;
-    border:3px solid #d4af37;
-    box-shadow:0 0 12px rgba(255,215,0,0.4);
+background:#ffcc70;
 }
 
 .card-back{
-    background:#fff;
-    transform:rotateY(180deg);
-    border:3px solid #d4af37;
+transform:rotateY(180deg);
+background:white;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:30px;
 }
-
-.card-back img{
-    width:100%;
-    height:100%;
-    object-fit:cover;
-    border-radius:12px;
-}
-
-/* رسالة الفوز */
-#winnerMessage{
-    font-size:20px;
-    margin-top:15px;
-    color:#ffd700;
-    text-shadow:0 0 10px gold;
-}
-
-/* هلال زخرفي */
-.moon{
-    position:fixed;
-    top:20px;
-    left:20px;
-    font-size:40px;
-    color:#ffd700;
-    text-shadow:0 0 15px gold;
-}
-
 </style>
 </head>
+
 <body>
 
-<div class="moon">🌙</div>
+<h1>🎮 غرفة جماعية مباشرة</h1>
+<div id="game-board"></div>
 
-<h1>✨ جمرة غضى - إصدار رمضان ✨</h1>
-
-<div class="controls">
-    <input type="text" id="playerName" placeholder="اسم اللاعب">
-    
-    <select id="difficulty">
-        <option value="4">سهل</option>
-        <option value="6">متوسط</option>
-        <option value="8">صعب</option>
-    </select>
-
-    <button onclick="startGame()">ابدأ اللعبة</button>
-</div>
-
-<div class="game-board" id="gameBoard"></div>
-<div id="winnerMessage"></div>
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <script>
 
-const allImages = [
-"https://e.top4top.io/p_3697mlg9s2.png",
-"https://picsum.photos/300?1",
-"https://picsum.photos/300?2",
-"https://picsum.photos/300?3",
-"https://picsum.photos/300?4",
-"https://picsum.photos/300?5",
-"https://picsum.photos/300?6",
-"https://picsum.photos/300?7"
-];
+const firebaseConfig = {
+  apiKey: "AIzaSyD6uCfq2o4zaimOqjz-_tVkukpgLp7rZIQ",
+  authDomain: "ola-cards.firebaseapp.com",
+  databaseURL: "https://ola-cards-default-rtdb.firebaseio.com",
+  projectId: "ola-cards",
+  storageBucket: "ola-cards.firebasestorage.app",
+  messagingSenderId: "40775529581",
+  appId: "1:40775529581:web:8040ea60cba212401afb64"
+};
 
-let cards = [];
-let firstCard = null;
-let secondCard = null;
-let lockBoard = false;
-let matches = 0;
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
 
-function startGame(){
+const images=["🌍","☕","🏙️","🌅","🏔️","🏜️","🌆","🏛️"];
 
-    document.getElementById("winnerMessage").innerHTML="";
-    const board = document.getElementById("gameBoard");
-    board.innerHTML="";
-    matches = 0;
+let flipped=[];
 
-    const difficulty = parseInt(document.getElementById("difficulty").value);
-    const selectedImages = allImages.slice(0, difficulty);
+// إنشاء اللعبة أول مرة
+database.ref("room").once("value",snapshot=>{
+if(!snapshot.exists()){
+let cards=[...images,...images];
+cards.sort(()=>0.5-Math.random());
 
-    cards = [...selectedImages, ...selectedImages];
-    cards.sort(()=>0.5 - Math.random());
-
-    board.style.gridTemplateColumns = `repeat(auto-fit,minmax(80px,1fr))`;
-
-    cards.forEach(src=>{
-        const card = document.createElement("div");
-        card.classList.add("card");
-
-        card.innerHTML = `
-        <div class="card-inner">
-            <div class="card-front">🌙</div>
-            <div class="card-back">
-                <img src="${src}">
-            </div>
-        </div>
-        `;
-
-        card.addEventListener("click", flipCard);
-        board.appendChild(card);
-    });
+database.ref("room").set({
+cards:cards.map(c=>({value:c,flipped:false}))
+});
 }
+});
 
-function flipCard(){
-    if(lockBoard) return;
-    if(this === firstCard) return;
+// الاستماع للتحديثات
+database.ref("room/cards").on("value",snapshot=>{
+const board=document.getElementById("game-board");
+board.innerHTML="";
+snapshot.val().forEach((card,i)=>{
+let div=document.createElement("div");
+div.className="card"+(card.flipped?" flipped":"");
 
-    this.classList.add("flipped");
+div.innerHTML=`
+<div class="card-inner">
+<div class="card-front"></div>
+<div class="card-back">${card.value}</div>
+</div>`;
 
-    if(!firstCard){
-        firstCard = this;
-        return;
-    }
+div.onclick=()=>flipCard(i,card.flipped);
+board.appendChild(div);
+});
+});
 
-    secondCard = this;
-    checkMatch();
-}
+function flipCard(index,alreadyFlipped){
+if(alreadyFlipped) return;
 
-function checkMatch(){
-    const img1 = firstCard.querySelector("img").src;
-    const img2 = secondCard.querySelector("img").src;
-
-    if(img1 === img2){
-        matches++;
-        resetBoard();
-
-        if(matches === cards.length/2){
-            showWinner();
-        }
-
-    }else{
-        lockBoard = true;
-        setTimeout(()=>{
-            firstCard.classList.remove("flipped");
-            secondCard.classList.remove("flipped");
-            resetBoard();
-        },800);
-    }
-}
-
-function showWinner(){
-    const name = document.getElementById("playerName").value || "البطل";
-    document.getElementById("winnerMessage").innerHTML =
-    `🌟 مبروك يا ${name} 🌙🔥  جمرة غضى  ✨`;
-}
-
-function resetBoard(){
-    [firstCard, secondCard] = [null, null];
-    lockBoard = false;
+database.ref("room/cards/"+index).update({
+flipped:true
+});
 }
 
 </script>
-
 </body>
-</html></html></html>
+</html>
