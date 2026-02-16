@@ -148,11 +148,12 @@ function createGame(){
     let cards=[...images,...images];
     cards.sort(()=>0.5-Math.random());
     db.ref("room").set({
-        cards:cards.map(c=>({value:c,flipped:false,matched:false})),
-        turn:0,
-        players:{}
-    });
-}
+        cards:cards.map(c=>({
+    value:c,
+    flipped:false,
+    matched:false
+}))
+
 
 db.ref("room").once("value",snap=>{
     if(!snap.exists()){
