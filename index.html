@@ -3,131 +3,157 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ola Cards - Online</title>
+<title>Ola Cards PRO</title>
 
 <style>
 body{
-    margin:0;
-    font-family:'Segoe UI', Arial;
-    background:linear-gradient(135deg,#1e3c72,#2a5298);
-    color:white;
-    text-align:center;
+margin:0;
+font-family:'Segoe UI';
+background:linear-gradient(135deg,#1e3c72,#2a5298);
+color:white;
+text-align:center;
 }
 
-h1{margin:20px;}
+h1{
+margin:20px;
+font-size:28px;
+}
 
-#loginBox{margin:20px;}
+#loginBox{
+margin:20px;
+}
 
 input{
-    padding:8px;
-    border-radius:6px;
-    border:none;
+padding:10px;
+border-radius:8px;
+border:none;
+width:200px;
 }
 
 button{
-    padding:8px 15px;
-    border:none;
-    border-radius:6px;
-    background:#ffcc00;
-    font-weight:bold;
-    cursor:pointer;
+padding:10px 18px;
+border:none;
+border-radius:8px;
+background:#ffcc00;
+font-weight:bold;
+cursor:pointer;
+margin:5px;
 }
 
 #game-board{
-    display:grid;
-    gap:15px;
-    padding:20px;
-    max-width:900px;
-    margin:auto;
+display:grid;
+gap:15px;
+padding:20px;
+max-width:900px;
+margin:auto;
 }
 
-@media (max-width:768px){
-    #game-board{grid-template-columns:repeat(3,1fr);}
+@media(max-width:768px){
+#game-board{grid-template-columns:repeat(3,1fr);}
 }
-@media (min-width:769px){
-    #game-board{grid-template-columns:repeat(4,1fr);}
+@media(min-width:769px){
+#game-board{grid-template-columns:repeat(4,1fr);}
 }
 
 .card{
-    aspect-ratio:3/4;
-    perspective:1200px;
+aspect-ratio:3/4;
+perspective:1200px;
 }
 
 .card-inner{
-    width:100%;
-    height:100%;
-    position:relative;
-    transform-style:preserve-3d;
-    transition:transform 0.6s;
+width:100%;
+height:100%;
+position:relative;
+transform-style:preserve-3d;
+transition:transform 0.6s;
 }
 
 .card.flipped .card-inner{
-    transform:rotateY(180deg);
+transform:rotateY(180deg);
 }
 
 .card-front,.card-back{
-    position:absolute;
-    width:100%;
-    height:100%;
-    backface-visibility:hidden;
-    border-radius:14px;
-    overflow:hidden;
+position:absolute;
+width:100%;
+height:100%;
+backface-visibility:hidden;
+border-radius:15px;
+overflow:hidden;
 }
 
 .card-front{
-    background:#ffcc00;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-weight:bold;
-    font-size:22px;
+background:#ffcc00;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:22px;
+font-weight:bold;
 }
 
 .card-back{
-    transform:rotateY(180deg);
-    background:white;
+transform:rotateY(180deg);
+background:white;
 }
 
 .card-back img{
-    width:100%;
-    height:100%;
-    object-fit:cover;
+width:100%;
+height:100%;
+object-fit:cover;
 }
 
-#playersList{margin-top:10px;}
+#playersList{
+margin-top:10px;
+}
+
+#turnInfo{
+margin-top:10px;
+font-weight:bold;
+}
+
+#winnerBox{
+font-size:22px;
+margin-top:15px;
+color:#ffeb3b;
+}
 </style>
 </head>
 
 <body>
 
-<h1> Ola Cards - جمرة غضى</h1>
+<h1> Ola Cards-جمرة غضى</h1>
 
 <div id="loginBox">
-    <input type="text" id="playerName" placeholder="اكتب اسمك">
-    <button onclick="joinGame()">دخول اللعبة</button>
+<input type="text" id="playerName" placeholder="اكتب اسمك">
+<button onclick="joinGame()">دخول اللعبة</button>
 </div>
 
 <div id="turnInfo"></div>
 <div id="playersList"></div>
+<div id="winnerBox"></div>
+<button onclick="restartGame()">إعادة اللعبة للجميع</button>
+
 <div id="game-board"></div>
 
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <script>
-const firebaseConfig = {
-  apiKey: "YOUR_KEY",
-  authDomain: "ola-cards.firebaseapp.com",
-  databaseURL: "https://ola-cards-default-rtdb.firebaseio.com",
-  projectId: "ola-cards"
+const firebaseConfig={
+apiKey:"AIzaSyD6uCfq2o4zaimOqjz-_tVkukpgLp7rZIQ",
+authDomain:"ola-cards.firebaseapp.com",
+databaseURL:"https://ola-cards-default-rtdb.firebaseio.com",
+projectId:"ola-cards",
+storageBucket:"ola-cards.firebasestorage.app",
+messagingSenderId:"40775529581",
+appId:"1:40775529581:web:8040ea60cba212401afb64"
 };
 
 firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
+const db=firebase.database();
 
 let myId=null;
 let flippedLocal=[];
-let playersOrder=[];
+let gameStarted=false;
 
 const images=[
 "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=400",
@@ -139,134 +165,144 @@ const images=[
 ];
 
 function createGame(){
-    let cards=[...images,...images];
-    cards.sort(()=>0.5-Math.random());
+let cards=[...images,...images];
+cards.sort(()=>0.5-Math.random());
 
-    db.ref("room").set({
-        cards:cards.map(c=>({
-            value:c,
-            flipped:false,
-            matched:false
-        })),
-        turn:0,
-        players:{}
-    });
+db.ref("room").set({
+cards:cards.map(c=>({value:c,flipped:false,matched:false})),
+turn:0,
+players:{},
+gameOver:false
+});
 }
 
 db.ref("room").once("value",snap=>{
-    if(!snap.exists()){
-        createGame();
-    }
+if(!snap.exists()) createGame();
 });
 
 function joinGame(){
-    const name=document.getElementById("playerName").value;
-    if(!name) return alert("اكتب اسمك");
+if(gameStarted) return alert("اللعبة بدأت بالفعل");
 
-    const ref=db.ref("room/players").push({
-        name:name,
-        score:0
-    });
+const name=document.getElementById("playerName").value;
+if(!name) return alert("اكتب اسمك");
 
-    myId=ref.key;
-    document.getElementById("loginBox").style.display="none";
+myId=db.ref("room/players").push({name:name,score:0}).key;
+document.getElementById("loginBox").style.display="none";
 }
 
 db.ref("room").on("value",snap=>{
-    const data=snap.val();
-    if(!data) return;
+const data=snap.val();
+if(!data) return;
 
-    playersOrder = Object.keys(data.players || {});
-    updatePlayers(data.players,data.turn);
-    renderBoard(data.cards);
+updatePlayers(data.players,data.turn);
+renderBoard(data.cards,data.turn,data.gameOver);
+checkGameEnd(data);
 });
 
 function updatePlayers(players,turn){
-    let html="";
-    playersOrder.forEach((id,i)=>{
-        html+=`<div>${players[id].name} : ${players[id].score}</div>`;
-        if(i===turn){
-            document.getElementById("turnInfo").innerHTML=
-            "🎯 الدور الحالي: "+players[id].name;
-        }
-    });
-    document.getElementById("playersList").innerHTML=html;
+let html="";
+let ids=Object.keys(players||{});
+
+if(ids.length>0) gameStarted=true;
+
+ids.forEach((id,i)=>{
+html+=`<div>${players[id].name} : ${players[id].score}</div>`;
+if(i===turn){
+document.getElementById("turnInfo").innerHTML=
+"🎯 الدور الحالي: "+players[id].name;
+}
+});
+
+document.getElementById("playersList").innerHTML=html;
 }
 
-function renderBoard(cards){
-    const board=document.getElementById("game-board");
-    board.innerHTML="";
+function renderBoard(cards,turn,gameOver){
+const board=document.getElementById("game-board");
+board.innerHTML="";
 
-    cards.forEach((card,i)=>{
-        const div=document.createElement("div");
-        div.className="card"+(card.flipped||card.matched?" flipped":"");
+cards.forEach((card,i)=>{
+let div=document.createElement("div");
+div.className="card"+(card.flipped||card.matched?" flipped":"");
 
-        div.innerHTML=`
-        <div class="card-inner">
-            <div class="card-front">Ola</div>
-            <div class="card-back">
-                <img src="${card.value}">
-            </div>
-        </div>`;
+div.innerHTML=`
+<div class="card-inner">
+<div class="card-front">Ola</div>
+<div class="card-back">
+<img src="${card.value}">
+</div>
+</div>`;
 
-        div.onclick=()=>handleFlip(i);
-        board.appendChild(div);
-    });
+div.onclick=()=>flipCard(i,cards,turn,gameOver);
+board.appendChild(div);
+});
 }
 
-function handleFlip(index){
+function flipCard(index,cards,turn,gameOver){
+if(!myId||gameOver) return;
 
-    if(!myId) return;
+db.ref("room/players").once("value").then(pSnap=>{
+const ids=Object.keys(pSnap.val());
+if(ids[turn]!==myId) return;
 
-    db.ref("room").once("value").then(snap=>{
-        const data=snap.val();
-        const cards=data.cards;
-        const turn=data.turn;
+if(cards[index].flipped||cards[index].matched) return;
 
-        if(playersOrder[turn]!==myId) return;
+db.ref("room/cards/"+index).update({flipped:true});
+flippedLocal.push(index);
 
-        if(cards[index].flipped || cards[index].matched) return;
-
-        db.ref("room/cards/"+index).update({flipped:true});
-        flippedLocal.push(index);
-
-        if(flippedLocal.length===2){
-            setTimeout(()=>{
-                checkMatch();
-            },700);
-        }
-    });
+if(flippedLocal.length===2){
+setTimeout(()=>checkMatch(ids,turn),700);
+}
+});
 }
 
-function checkMatch(){
+function checkMatch(ids,turn){
+db.ref("room/cards").once("value").then(snap=>{
+const cards=snap.val();
+let[a,b]=flippedLocal;
 
-    db.ref("room").once("value").then(snap=>{
-        const data=snap.val();
-        const cards=data.cards;
-        const turn=data.turn;
+if(cards[a].value===cards[b].value){
+db.ref("room/cards/"+a).update({matched:true});
+db.ref("room/cards/"+b).update({matched:true});
+db.ref("room/players/"+ids[turn]+"/score")
+.transaction(s=>(s||0)+1);
+}else{
+db.ref("room/cards/"+a).update({flipped:false});
+db.ref("room/cards/"+b).update({flipped:false});
+db.ref("room").update({turn:(turn+1)%ids.length});
+}
+flippedLocal=[];
+});
+}
 
-        let [a,b]=flippedLocal;
+function checkGameEnd(data){
+if(data.gameOver) return;
 
-        if(cards[a].value===cards[b].value){
+const allMatched=data.cards.every(c=>c.matched);
+if(!allMatched) return;
 
-            db.ref("room/cards/"+a).update({matched:true});
-            db.ref("room/cards/"+b).update({matched:true});
+let max=0;
+let winners=[];
+Object.values(data.players).forEach(p=>{
+if(p.score>max) max=p.score;
+});
+Object.values(data.players).forEach(p=>{
+if(p.score===max) winners.push(p.name);
+});
 
-            db.ref("room/players/"+playersOrder[turn]+"/score")
-            .transaction(score=>(score||0)+1);
+let message="";
+if(winners.length===1){
+message="🏆 الفائز: "+winners[0];
+}else{
+message="🤝 تعادل بين: "+winners.join(" و ");
+}
 
-        }else{
+document.getElementById("winnerBox").innerHTML=message;
+db.ref("room").update({gameOver:true});
+}
 
-            db.ref("room/cards/"+a).update({flipped:false});
-            db.ref("room/cards/"+b).update({flipped:false});
-
-            db.ref("room").update({
-                turn:(turn+1)%playersOrder.length
-            });
-        }
-
-        flippedLocal=[];
-    });
+function restartGame(){
+createGame();
+document.getElementById("winnerBox").innerHTML="";
 }
 </script>
 </body>
