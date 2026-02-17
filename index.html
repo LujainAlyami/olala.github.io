@@ -16,9 +16,7 @@ body{
 
 h1{margin:20px;}
 
-#loginBox{
-    margin:20px;
-}
+#loginBox{margin:20px;}
 
 input{
     padding:8px;
@@ -60,7 +58,7 @@ button{
     height:100%;
     position:relative;
     transform-style:preserve-3d;
-    transition:transform 0.7s;
+    transition:transform 0.6s;
 }
 
 .card.flipped .card-inner{
@@ -96,9 +94,7 @@ button{
     object-fit:cover;
 }
 
-#playersList{
-    margin-top:10px;
-}
+#playersList{margin-top:10px;}
 </style>
 </head>
 
@@ -120,13 +116,10 @@ button{
 
 <script>
 const firebaseConfig = {
-  apiKey: "AIzaSyD6uCfq2o4zaimOqjz-_tVkukpgLp7rZIQ",
+  apiKey: "YOUR_KEY",
   authDomain: "ola-cards.firebaseapp.com",
   databaseURL: "https://ola-cards-default-rtdb.firebaseio.com",
-  projectId: "ola-cards",
-  storageBucket: "ola-cards.firebasestorage.app",
-  messagingSenderId: "40775529581",
-  appId: "1:40775529581:web:8040ea60cba212401afb64"
+  projectId: "ola-cards"
 };
 
 firebase.initializeApp(firebaseConfig);
@@ -134,6 +127,7 @@ const db = firebase.database();
 
 let myId=null;
 let flippedLocal=[];
+let playersOrder=[];
 
 const images=[
 "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=400",
@@ -159,7 +153,6 @@ function createGame(){
     });
 }
 
-
 db.ref("room").once("value",snap=>{
     if(!snap.exists()){
         createGame();
@@ -170,7 +163,12 @@ function joinGame(){
     const name=document.getElementById("playerName").value;
     if(!name) return alert("اكتب اسمك");
 
-    myId=db.ref("room/players").push({name:name,score:0}).key;
+    const ref=db.ref("room/players").push({
+        name:name,
+        score:0
+    });
+
+    myId=ref.key;
     document.getElementById("loginBox").style.display="none";
 }
 
@@ -178,30 +176,30 @@ db.ref("room").on("value",snap=>{
     const data=snap.val();
     if(!data) return;
 
+    playersOrder = Object.keys(data.players || {});
     updatePlayers(data.players,data.turn);
-    renderBoard(data.cards,data.turn);
+    renderBoard(data.cards);
 });
 
 function updatePlayers(players,turn){
     let html="";
-    let ids=Object.keys(players||{});
-    ids.forEach((id,i)=>{
+    playersOrder.forEach((id,i)=>{
         html+=`<div>${players[id].name} : ${players[id].score}</div>`;
         if(i===turn){
             document.getElementById("turnInfo").innerHTML=
-            "الدور الحالي: "+players[id].name;
+            "🎯 الدور الحالي: "+players[id].name;
         }
     });
     document.getElementById("playersList").innerHTML=html;
 }
 
-function renderBoard(cards,turn){
+function renderBoard(cards){
     const board=document.getElementById("game-board");
     board.innerHTML="";
+
     cards.forEach((card,i)=>{
-        let div=document.createElement("div");
-        div.className="card"+
-        (card.flipped||card.matched?" flipped":"");
+        const div=document.createElement("div");
+        div.className="card"+(card.flipped||card.matched?" flipped":"");
 
         div.innerHTML=`
         <div class="card-inner">
@@ -211,25 +209,21 @@ function renderBoard(cards,turn){
             </div>
         </div>`;
 
-        div.onclick=()=>flipCard(i,cards,turn);
+        div.onclick=()=>handleFlip(i);
         board.appendChild(div);
     });
 }
 
-function flipCard(index,cards,turn){
+function handleFlip(index){
 
     if(!myId) return;
 
-    db.ref("room/players").once("value").then(pSnap=>{
+    db.ref("room").once("value").then(snap=>{
+        const data=snap.val();
+        const cards=data.cards;
+        const turn=data.turn;
 
-        const playersData = pSnap.val();
-        if(!playersData) return;
-
-        const ids = Object.keys(playersData);
-
-        if(ids.length === 0) return;
-
-        if(ids[turn] !== myId) return;
+        if(playersOrder[turn]!==myId) return;
 
         if(cards[index].flipped || cards[index].matched) return;
 
@@ -238,36 +232,28 @@ function flipCard(index,cards,turn){
 
         if(flippedLocal.length===2){
             setTimeout(()=>{
-                checkMatch(cards,ids,turn);
-            },800);
+                checkMatch();
+            },700);
         }
     });
 }
 
+function checkMatch(){
 
-function checkMatch(cardsSnapshot,ids,turn){
+    db.ref("room").once("value").then(snap=>{
+        const data=snap.val();
+        const cards=data.cards;
+        const turn=data.turn;
 
-    db.ref("room/cards").once("value").then(snap=>{
+        let [a,b]=flippedLocal;
 
-        const cards = snap.val();
-        let [a,b] = flippedLocal;
+        if(cards[a].value===cards[b].value){
 
-        if(!cards[a] || !cards[b]) return;
+            db.ref("room/cards/"+a).update({matched:true});
+            db.ref("room/cards/"+b).update({matched:true});
 
-        if(cards[a].value === cards[b].value){
-
-            db.ref("room/cards/"+a).update({
-                matched:true,
-                flipped:true
-            });
-
-            db.ref("room/cards/"+b).update({
-                matched:true,
-                flipped:true
-            });
-
-            db.ref("room/players/"+ids[turn]+"/score")
-            .transaction(score => (score||0) + 1);
+            db.ref("room/players/"+playersOrder[turn]+"/score")
+            .transaction(score=>(score||0)+1);
 
         }else{
 
@@ -275,15 +261,13 @@ function checkMatch(cardsSnapshot,ids,turn){
             db.ref("room/cards/"+b).update({flipped:false});
 
             db.ref("room").update({
-                turn:(turn+1) % ids.length
+                turn:(turn+1)%playersOrder.length
             });
         }
 
         flippedLocal=[];
-
     });
 }
-
 </script>
 </body>
 </html>
