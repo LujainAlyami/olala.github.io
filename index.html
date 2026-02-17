@@ -298,21 +298,42 @@ function checkMatch(ids,turn){
 }
 
 
-let message="";
-if(winners.length===1){
-message="🏆 الفائز: "+winners[0];
-}else{
-message="🤝 تعادل بين: "+winners.join(" و ");
+function checkGameEnd(){
+
+    db.ref("room").once("value").then(snap=>{
+        const data = snap.val();
+        if(!data) return;
+
+        const cards = data.cards;
+        const players = data.players;
+
+        const allMatched = cards.every(c => c.matched);
+
+        if(!allMatched) return;
+
+        let maxScore = 0;
+        let winners = [];
+
+        Object.values(players).forEach(p=>{
+            if(p.score > maxScore){
+                maxScore = p.score;
+            }
+        });
+
+        Object.values(players).forEach(p=>{
+            if(p.score === maxScore){
+                winners.push(p.name);
+            }
+        });
+
+        if(winners.length === 1){
+            alert("🏆 الفائز هو: " + winners[0]);
+        }else{
+            alert("🤝 تعادل بين: " + winners.join(" و "));
+        }
+    });
 }
 
-document.getElementById("winnerBox").innerHTML=message;
-db.ref("room").update({gameOver:true});
-}
-
-function restartGame(){
-createGame();
-document.getElementById("winnerBox").innerHTML="";
-}
 </script>
 </body>
 </html>
